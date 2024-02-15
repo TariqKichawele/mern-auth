@@ -1,7 +1,8 @@
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { useState, useRef, useEffect } from "react";
 import { app } from "../firebase";
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { updateUserFailure, updateUserStart, updateUserSuccess } from "../redux/user/userSlice";
 
 
 export default function Profile() {
@@ -9,7 +10,9 @@ export default function Profile() {
   const [ image, setImage ] = useState(undefined);
   const [ imagePercent, setImagePercent ] = useState(0);
   const [ imageError, setImageError ] = useState(false);
+  const [ updateSuccess, setUpdateSuccess ] = useState(false);
   const [ formData, setFormData ] = useState({});
+  const dispatch = useDispatch();
   const filRef = useRef(null);
 
   useEffect(() => {
@@ -42,10 +45,32 @@ export default function Profile() {
       }
     );
   }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      dispatch(updateUserStart());
+      const res = await fetch(`/api/user/update/${currentUser._id}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+      const data = await res.json();
+      if(data.success === false){
+        dispatch(updateUserFailure(data));
+      } 
+      dispatch(updateUserSuccess(data));  
+      setUpdateSuccess(true);     
+    } catch (error) {
+      dispatch(updateUserFailure(error));
+    }
+  }
   return (
     <div className="p-3 max-w-lg mx-auto">
       <h1 className="text-3xl font-semibold text-center my-7">Profile</h1>
-      <form className="flex flex-col gap-4">
+      <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
         <input 
           type="file" 
           hidden 
@@ -112,7 +137,10 @@ export default function Profile() {
         <span className="text-red-700 cursor-pointer">Delete Account</span>
         <span className="text-red-700 cursor-pointer">Sign Out</span>
       </div>
-      <p>{error && 'Something went wrong'}</p>
+      <p className="text-red-700 mt-5">{error && 'Something went wrong'}</p>
+      <p className="text-green-700 mt-5">
+        {updateSuccess && 'User is update successfully'}
+      </p>
     </div>
   )
 }
