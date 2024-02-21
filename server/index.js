@@ -10,7 +10,11 @@ import authRoute from './routes/authRoute.js';
 dotenv.config();
 
 const app = express();
+
+const __dirname = path.resolve();
+
 app.use(express.static(path.join(__dirname, '/client/dist')));
+
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'client', 'dist', 'index.html'));
 });
@@ -28,9 +32,7 @@ mongoose
 })
 .catch((err) => {
     console.log(err);
-});
-
-const __dirname = path.resolve();
+})
 
 app.use('/api/user', userRoute);
 app.use('/api/auth', authRoute);
